@@ -1,0 +1,51 @@
+Sub GetJiraTasksAndSubtasksFromSprint()
+
+    Dim JiraUrl As String
+    Dim SprintId As String
+    Dim AuthHeader As String
+    Dim Json As Object
+    
+    ' Set the Jira URL, Sprint ID, and Authorization header
+    JiraUrl = "https://your-jira-instance.com/rest/api/2/search?jql=sprint=" & SprintId
+    SprintId = "your-sprint-id"
+    AuthHeader = "Basic " & Base64Encode("your-username:your-api-token")
+    
+    ' Create a new HTTP request and set the headers
+    Dim Request As New MSXML2.XMLHTTP60
+    Request.Open "GET", JiraUrl, False
+    Request.setRequestHeader "Authorization", AuthHeader
+    Request.setRequestHeader "Content-Type", "application/json"
+    
+    ' Send the request and parse the response JSON
+    Request.send
+    Set Json = JsonConverter.ParseJson(Request.responseText)
+    
+    ' Loop through the issues and print the summary of each task and sub-task
+    For Each Issue In Json("issues")
+        Debug.Print Issue("key") & " - " & Issue("fields")("summary")
+        For Each Subtask In Issue("fields")("subtasks")
+            Debug.Print "  " & Subtask("key") & " - " & Subtask("fields")("summary")
+        Next Subtask
+    Next Issue
+
+End Sub
+
+Function Base64Encode(ByVal sText As String) As String
+
+    Dim ascText As Object
+    Set ascText = CreateObject("System.Text.UTF8Encoding")
+    
+    Dim TextBytes() As Byte
+    TextBytes = ascText.GetBytes_4(sText)
+    
+    Dim objXML As Object
+    Set objXML = CreateObject("MSXML2.DOMDocument")
+    
+    Dim objNode As Object
+    Set objNode = objXML.CreateElement("base64")
+    objNode.DataType = "bin.base64"
+    objNode.nodeTypedValue = TextBytes
+    
+    Base64Encode = objNode.Text
+
+End Function
