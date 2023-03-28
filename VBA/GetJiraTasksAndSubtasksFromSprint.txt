@@ -6,12 +6,29 @@ Sub GetJiraTasksAndSubtasksFromSprint()
     Dim Json As Object
     
     ' Set the Jira URL, Sprint ID, and Authorization header
-    JiraUrl = "https://your-jira-instance.com/rest/api/2/search?jql=sprint=" & SprintId
     SprintId = "your-sprint-id"
+    JiraUrl = "https://your-jira-instance.com/rest/agile/1.0/sprint/" & SprintId
     AuthHeader = "Basic " & Base64Encode("your-username:your-api-token")
     
     ' Create a new HTTP request and set the headers
     Dim Request As New MSXML2.XMLHTTP60
+    Request.Open "GET", JiraUrl, False
+    Request.setRequestHeader "Authorization", AuthHeader
+    Request.setRequestHeader "Content-Type", "application/json"
+    
+    ' Send the request and parse the response JSON
+    Request.send
+    Set Json = JsonConverter.ParseJson(Request.responseText)
+    
+    ' Print the start date and end date of the sprint
+    Debug.Print "Sprint " & Json("id") & ": " & Json("name")
+    Debug.Print "Start Date: " & Json("startDate")
+    Debug.Print "End Date: " & Json("endDate")
+    
+    ' Retrieve the tasks and sub-tasks for the sprint
+    JiraUrl = "https://your-jira-instance.com/rest/api/2/search?jql=sprint=" & SprintId
+    
+    ' Create a new HTTP request and set the headers
     Request.Open "GET", JiraUrl, False
     Request.setRequestHeader "Authorization", AuthHeader
     Request.setRequestHeader "Content-Type", "application/json"
