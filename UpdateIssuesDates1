@@ -1,0 +1,56 @@
+Sub UpdateIssuesDates()
+
+Dim JiraUrl As String
+Dim JiraUserName As String
+Dim JiraPassword As String
+Dim JiraSprintId As String
+Dim JiraApiUrl As String
+Dim JsonReqBody As String
+Dim JsonResBody As String
+Dim httpReq As New MSXML2.XMLHTTP60
+Dim jiraIssues As Object
+Dim jiraIssue As Object
+
+' Set Jira URL, user name, and password
+JiraUrl = "https://your-jira-url.com"
+JiraUserName = "your-jira-username"
+JiraPassword = "your-jira-password"
+
+' Set Jira sprint ID
+JiraSprintId = "your-jira-sprint-id"
+
+' Set Jira API URL
+JiraApiUrl = JiraUrl & "/rest/agile/1.0/sprint/" & JiraSprintId & "/issue"
+
+' Set JSON request body
+JsonReqBody = ""
+
+' Send HTTP request to Jira API to retrieve sprint issues
+With httpReq
+    .Open "GET", JiraApiUrl, False, JiraUserName, JiraPassword
+    .setRequestHeader "Content-Type", "application/json"
+    .send JsonReqBody
+    JsonResBody = .responseText
+End With
+
+' Parse JSON response body into Jira issues object
+Set jiraIssues = JsonConverter.ParseJson(JsonResBody)
+
+' Loop through each issue in the Jira issues object and update its start date and end date
+For Each jiraIssue In jiraIssues("issues")
+    ' Set issue start date and end date based on sprint start date and end date
+    jiraIssue("fields")("customfield_12345") = "Sprint Start Date" ' Replace "customfield_12345" with the ID of the start date field
+    jiraIssue("fields")("customfield_67890") = "Sprint End Date" ' Replace "customfield_67890" with the ID of the end date field
+    
+    ' Set JSON request body for updating issue
+    JsonReqBody = JsonConverter.ConvertToJson(jiraIssue("fields"))
+    
+    ' Send HTTP request to Jira API to update issue
+    With httpReq
+        .Open "PUT", JiraUrl & "/rest/api/2/issue/" & jiraIssue("key"), False, JiraUserName, JiraPassword
+        .setRequestHeader "Content-Type", "application/json"
+        .send JsonReqBody
+    End With
+Next jiraIssue
+
+End Sub
