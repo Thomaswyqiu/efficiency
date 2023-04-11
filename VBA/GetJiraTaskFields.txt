@@ -1,0 +1,59 @@
+Sub GetJiraTaskFields()
+
+    Dim http As Object
+    Set http = CreateObject("MSXML2.XMLHTTP")
+    
+    ' Change the URL to match the Jira issue key you want to retrieve fields from
+    Dim url As String
+    url = "https://your-jira-instance.com/rest/api/2/issue/TASK-1234"
+    
+    http.Open "GET", url, False
+    
+    ' Change the Jira credentials to match your Jira instance credentials
+    http.setRequestHeader "Authorization", "Basic " & Base64Encode("username:password")
+    
+    http.send
+    
+    Dim response As String
+    response = http.responseText
+    
+    Dim json As Object
+    Set json = JsonConverter.ParseJson(response)
+    
+    ' Loop through all fields in the Jira task and print their values
+    For Each item In json("fields")
+        Debug.Print item("name") & ": " & item("value")
+    Next item
+
+End Sub
+
+Function Base64Encode(str As String) As String
+    Dim objXML As MSXML2.DOMDocument60
+    Dim objNode As MSXML2.IXMLDOMElement
+    
+    Set objXML = New MSXML2.DOMDocument60
+    Set objNode = objXML.createElement("base64")
+    
+    objNode.dataType = "bin.base64"
+    objNode.nodeTypedValue = Stream_StringToBinary(str)
+    Base64Encode = objNode.Text
+    
+    Set objNode = Nothing
+    Set objXML = Nothing
+End Function
+
+Function Stream_StringToBinary(Text As String) As Variant
+    Const adTypeText = 2
+    Const adTypeBinary = 1
+    
+    Dim BinaryStream As Object
+    Set BinaryStream = CreateObject("ADODB.Stream")
+    
+    BinaryStream.Charset = "us-ascii"
+    BinaryStream.Type = adTypeText
+    BinaryStream.Open
+    BinaryStream.WriteText Text
+    BinaryStream.Position = 0
+    BinaryStream.Type = adTypeBinary
+    Stream_StringToBinary = BinaryStream.Read
+End Function
