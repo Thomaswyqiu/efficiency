@@ -1,19 +1,37 @@
 import yaml
 import re
 
+def convert_zz(zz):
+    conversion_map = {
+        'SW': 'WK1',
+        '2W': 'WK2',
+        '2M': 'MO2'
+    }
+    return conversion_map.get(zz, zz)
+
 def process_yaml(file_path):
+    # 定义允许的货币代码
+    valid_currencies = {'jpy', 'gbp', 'chf'}
+    
     with open(file_path, 'r') as file:
         data = yaml.safe_load(file)
 
     for i, dep in enumerate(data['dependencies']):
         value_key = dep.get('valueKey', '')
         if value_key.endswith('=R:BID'):
-            match = re.match(r'mk_(\w{3})(\w{3})(\w{3})=R:BID', value_key)
+            # 修改正则表达式以匹配新的格式要求
+            # XXX后面必须是jpy/gbp/chf，ZZ只有两个字符
+            match = re.match(r'mk_(\w{3})(jpy|gbp|chf)(\w{2})=R:BID', value_key, re.IGNORECASE)
             if match:
-                xxx, yyy, zzz = match.groups()
-                dep['valueKey'] = f'{xxx}@{yyy}@{zzz}:bid'
-                if i > 0:
-                    data['dependencies'][i-1]['source'] = xxx
+                xxx, yyy, zz = match.groups()
+                # 转换ZZ值
+                new_zz = convert_zz(zz.upper())
+                # 确保货币代码是小写的
+                yyy = yyy.lower()
+                if yyy in valid_currencies:
+                    dep['valueKey'] = f'{xxx}@{yyy}@{new_zz}:bid'
+                    if i > 0:
+                        data['dependencies'][i-1]['source'] = xxx
 
     with open(file_path, 'w') as file:
         yaml.dump(data, file, default_flow_style=False)
